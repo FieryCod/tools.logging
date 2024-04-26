@@ -22,7 +22,8 @@
   (:use
    [clojure.string :only [trim-newline]]
    [clojure.pprint :only [code-dispatch pprint with-pprint-dispatch]])
-  (:require [clojure.tools.logging.impl :as impl]))
+  (:require [clojure.tools.logging.impl :as impl]
+            [clojure.tools.logging.util :refer [maybe-defer]]))
 
 (def ^{:doc
   "The default agent used for performing logging when direct logging is
@@ -73,7 +74,7 @@
   ([level throwable message]
     `(log ~*ns* ~level ~throwable ~message))
   ([logger-ns level throwable message]
-    `(log *logger-factory* ~logger-ns ~level ~throwable ~message))
+    `(log (maybe-defer *logger-factory*) ~logger-ns ~level ~throwable ~message))
   ([logger-factory logger-ns level throwable message]
     `(let [logger# (impl/get-logger ~logger-factory ~logger-ns)]
        (if (impl/enabled? logger# ~level)
@@ -87,7 +88,7 @@
   [level x & more]
   (if (or (instance? String x) (nil? more)) ; optimize for common case
     `(log ~level (print-str ~x ~@more))
-    `(let [logger# (impl/get-logger *logger-factory* ~*ns*)]
+    `(let [logger# (impl/get-logger (maybe-defer *logger-factory*) ~*ns*)]
        (if (impl/enabled? logger# ~level)
          (let [x# ~x]
            (if (instance? Throwable x#) ; type check only when enabled
@@ -102,7 +103,7 @@
   [level x & more]
   (if (or (instance? String x) (nil? more)) ; optimize for common case
     `(log ~level (format ~x ~@more))
-    `(let [logger# (impl/get-logger *logger-factory* ~*ns*)]
+    `(let [logger# (impl/get-logger (maybe-defer *logger-factory*) ~*ns*)]
        (if (impl/enabled? logger# ~level)
          (let [x# ~x]
            (if (instance? Throwable x#) ; type check only when enabled
@@ -116,7 +117,7 @@
   ([level]
     `(enabled? ~level ~*ns*))
   ([level logger-ns]
-    `(impl/enabled? (impl/get-logger *logger-factory* ~logger-ns) ~level)))
+    `(impl/enabled? (impl/get-logger (maybe-defer *logger-factory*) ~logger-ns) ~level)))
 
 (defmacro spy
   "Evaluates expr and may write the form and its result to the log. Returns the
@@ -148,7 +149,7 @@
 (defn log-stream
   "Creates a PrintStream that will output to the log at the specified level."
   [level logger-ns]
-  (let [logger (impl/get-logger *logger-factory* logger-ns)]
+  (let [logger (impl/get-logger (maybe-defer *logger-factory*) logger-ns)]
     (java.io.PrintStream.
       (proxy [java.io.ByteArrayOutputStream] []
         (flush []
@@ -335,4 +336,4 @@
   LoggerFactory implementation via binding or alter-var-root.
 
   See the various factory functions in clojure.tools.logger.impl."
-  (find-factory))
+  (delay (find-factory)))

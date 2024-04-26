@@ -26,6 +26,7 @@
   "}
   clojure.tools.logging.readable
   (:require [clojure.tools.logging :as log]
+            [clojure.tools.logging.util :refer [maybe-defer]]
             [clojure.tools.logging.impl :as impl]))
 
 (defn- readable-print-args [args]
@@ -51,7 +52,7 @@
   (if (or (string? x) (nil? more)) ; optimize for non-exception case
     `(log/log ~level (binding [*print-readably* true]
                        (print-str ~@(readable-print-args (cons x more)))))
-    `(let [logger# (impl/get-logger log/*logger-factory* ~*ns*)]
+    `(let [logger# (impl/get-logger (maybe-defer log/*logger-factory*) ~*ns*)]
        (if (impl/enabled? logger# ~level)
          (let [x# ~x]
            (if (instance? Throwable x#)
@@ -76,7 +77,7 @@
   (if (or (instance? String x) (nil? more)) ; optimize for non-exception case
     `(log/log ~level (binding [*print-readably* true]
                        (format ~x ~@(readable-format-args more))))
-    `(let [logger# (impl/get-logger log/*logger-factory* ~*ns*)]
+    `(let [logger# (impl/get-logger (maybe-defer log/*logger-factory*) ~*ns*)]
        (if (impl/enabled? logger# ~level)
          (let [x# ~x]
            (if (instance? Throwable x#) ; type check only when enabled
