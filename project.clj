@@ -1,4 +1,4 @@
-(defproject org.clojure/tools.logging "1.1.1-SNAPSHOT"
+(defproject io.github.fierycod/tools.logging "1.1.2"
   :description "Clojure logging API."
   :url "https://github.com/clojure/tools.logging"
   :license {:name "Eclipse Public License"
