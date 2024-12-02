@@ -128,6 +128,8 @@ will end up printing the data map.
 * Sean Corfield
 * Timothy Pratley
 
+*Note:* Fork donated to blockether.io organization.
+
 ## License
 
 Copyright © Rich Hickey, Alex Taggart, and contributors
